@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Multi-Platform Content Moderator</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <div class="container">
+    <h1>Content Moderator (Free, Multi-Platform)</h1>
+    <p>Paste your post text/caption or a post URL (Reddit, Twitter, Facebook, Instagram, OnlyFans):</p>
+    <textarea id="inputText" placeholder="Paste text or post URL here..."></textarea>
+    <button id="checkTextBtn">Check Text</button>
+    <div id="textResult"></div>
+    <hr>
+    <h2>Check an Image</h2>
+    <p>Paste a **public** Google Drive image link (see instructions below):</p>
+    <input id="imageUrlInput" placeholder="Paste Google Drive image link" style="width:100%"/>
+    <button id="checkImageBtn">Check Image</button>
+    <div id="imageResult"></div>
+    <hr>
+    <h3>Instructions</h3>
+    <ul>
+      <li>1. For text/caption, just paste and click "Check Text".</li>
+      <li>2. For an image: In Google Drive, right-click your image → Get link → Set access to "Anyone with the link" → Copy link → Paste above → Click "Check Image".</li>
+      <li>3. Wait for the result—green means safe, red means risky for posting.</li>
+    </ul>
+    <small>
+      Powered by free <a href="https://huggingface.co/facebook/roberta-base-toxic-comments">text</a> and <a href="https://huggingface.co/SmilingWolf/wd-v1-4-vit-tagger">image</a> moderation models.<br>
+      No login or signup needed.
+    </small>
+  </div>
+  <script src="main.js"></script>
+</body>
+</html>
