@@ -34,7 +34,10 @@ document.getElementById("checkTextBtn").onclick = async function() {
     const apiUrl = "https://api-inference.huggingface.co/models/facebook/roberta-base-toxic-comments";
     const response = await fetch(apiUrl, {
       method: "POST",
-      headers: {"Content-Type": "application/json"},
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer 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"
+      },
       body: JSON.stringify({"inputs": textToCheck})
     });
     const result = await response.json();
@@ -86,7 +89,10 @@ document.getElementById("checkImageBtn").onclick = async function() {
       const apiUrl = "https://api-inference.huggingface.co/models/SmilingWolf/wd-v1-4-vit-tagger";
       const hfResp = await fetch(apiUrl, {
         method: "POST",
-        headers: {"Content-Type": "application/json"},
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer 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"
+        },
         body: JSON.stringify({inputs: base64})
       });
       const res = await hfResp.json();
