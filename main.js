@@ -30,6 +30,10 @@ document.getElementById("checkTextBtn").onclick = async function() {
 
   // Load the TensorFlow.js toxicity model if not loaded
   if (!toxicityModel) {
+    if (typeof toxicity === "undefined") {
+      resultDiv.innerHTML = "<span style='color:red'>Toxicity model not loaded. Please ensure you have included the TensorFlow.js and toxicity model scripts in your HTML.</span>";
+      return;
+    }
     toxicityModel = await toxicity.load(0.7); // 0.7 is the threshold
   }
   toxicityModel.classify([textToCheck]).then(predictions => {
@@ -52,6 +56,17 @@ document.getElementById("checkTextBtn").onclick = async function() {
 
 
 // -------- IMAGE MODERATION --------
+// Ensure TFJS and NSFWJS are loaded
+function checkNSFWDeps() {
+  if (typeof nsfwjs === "undefined") {
+    return "NSFWJS library not loaded. Please include <script src='https://cdn.jsdelivr.net/npm/nsfwjs'></script> before your main.js.";
+  }
+  if (typeof tf === "undefined") {
+    return "TensorFlow.js library not loaded. Please include <script src='https://cdn.jsdelivr.net/npm/@tensorflow/tfjs'></script> before your main.js.";
+  }
+  return null;
+}
+
 let nsfwModel = null;
 document.getElementById("checkImageBtn").onclick = async function() {
   const url = document.getElementById("imageUrlInput").value.trim();
@@ -60,16 +75,25 @@ document.getElementById("checkImageBtn").onclick = async function() {
     resultDiv.innerHTML = "Paste a public image URL.";
     return;
   }
+
+  // Dependency check
+  const depError = checkNSFWDeps();
+  if (depError) {
+    resultDiv.innerHTML = `<span style='color:red'>${depError}</span>`;
+    return;
+  }
+
   resultDiv.innerHTML = "Checking image...";
 
   // Load NSFWJS model if not loaded
   try {
     if (!nsfwModel) {
+      // Optional: specify model URL if you want to self-host, otherwise loads from CDN
       nsfwModel = await nsfwjs.load();
       console.log("NSFWJS model loaded");
     }
   } catch (e) {
-    resultDiv.innerHTML = "<span style='color:red'>Failed to load NSFWJS model.</span>";
+    resultDiv.innerHTML = "<span style='color:red'>Failed to load NSFWJS model. Check your network connection and that CDN/model files are reachable.</span>";
     return;
   }
 
