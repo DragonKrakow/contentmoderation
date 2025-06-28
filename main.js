@@ -63,17 +63,32 @@ document.getElementById("checkImageBtn").onclick = async function() {
   resultDiv.innerHTML = "Checking image...";
 
   // Load NSFWJS model if not loaded
-  if (!nsfwModel) {
-    nsfwModel = await nsfwjs.load();
+  try {
+    if (!nsfwModel) {
+      nsfwModel = await nsfwjs.load();
+      console.log("NSFWJS model loaded");
+    }
+  } catch (e) {
+    resultDiv.innerHTML = "<span style='color:red'>Failed to load NSFWJS model.</span>";
+    return;
   }
+
+  // Remove any old images for debugging
+  let old = document.getElementById("debugImage");
+  if (old) old.remove();
 
   let img = new window.Image();
   img.crossOrigin = "anonymous";
+  img.id = "debugImage";
+  img.style = "display:none"; // Hide by default, can help debug if needed
+  document.body.appendChild(img);
+
   let timedOut = false;
   let timeout = setTimeout(() => {
     timedOut = true;
     resultDiv.innerHTML = "<span style='color:red'>Image took too long to load. Possible CORS issue or invalid image.</span>";
-  }, 7000); // 7 seconds timeout
+    img.remove();
+  }, 10000); // 10 seconds timeout
 
   img.onload = async function() {
     if (timedOut) return;
@@ -84,6 +99,15 @@ document.getElementById("checkImageBtn").onclick = async function() {
       canvas.height = img.naturalHeight;
       let ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0);
+
+      // Check if canvas is tainted (CORS issue)
+      try {
+        ctx.getImageData(0, 0, 1, 1);
+      } catch (e) {
+        resultDiv.innerHTML = "<span style='color:red'>Image is not CORS-enabled; cannot analyze.</span>";
+        img.remove();
+        return;
+      }
 
       const predictions = await nsfwModel.classify(canvas);
 
@@ -96,19 +120,20 @@ document.getElementById("checkImageBtn").onclick = async function() {
       const nsfwTypes = ["Hentai", "Porn", "Sexy"];
       const likelyNSFW = predictions.filter(p => nsfwTypes.includes(p.className) && p.probability > 0.4);
       if (likelyNSFW.length > 0) {
-        resultHtml = `<span style='color:red'>NSFW detected: ${likelyNSFW.map(p => `${p.className} (${(p.probability*100).toFixed(1)}%)`).join(", ")}</span><br>` + resultHtml;
+        resultDiv.innerHTML = `<span style='color:red'>NSFW detected: ${likelyNSFW.map(p => `${p.className} (${(p.probability*100).toFixed(1)}%)`).join(", ")}</span><br>` + resultHtml;
       } else {
-        resultHtml = `<span style='color:green'>No strong NSFW signals detected. Likely safe.</span><br>` + resultHtml;
+        resultDiv.innerHTML = `<span style='color:green'>No strong NSFW signals detected. Likely safe.</span><br>` + resultHtml;
       }
-      resultDiv.innerHTML = resultHtml;
     } catch (e) {
       resultDiv.innerHTML = "<span style='color:red'>Could not analyze image. Possible CORS issue or invalid image.</span>";
     }
+    img.remove();
   };
   img.onerror = function() {
     if (timedOut) return;
     clearTimeout(timeout);
     resultDiv.innerHTML = "<span style='color:red'>Could not load image. Try a direct image URL that allows cross-origin access.</span>";
+    img.remove();
   };
   img.src = url;
 };
