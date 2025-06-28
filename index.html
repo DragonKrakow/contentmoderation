@@ -1,36 +1,54 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Multi-Platform Content Moderator</title>
-  <link rel="stylesheet" href="style.css"/>
+  <meta charset="UTF-8">
+  <title>Content Moderation Demo</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <!-- Required ML libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/toxicity"></script>
+  <script src="https://cdn.jsdelivr.net/npm/nsfwjs/dist/nsfwjs.min.js"></script>
+  <style>
+    body { font-family: sans-serif; margin: 2em; background: #fafaff; }
+    .section { background: #fff; border-radius: 8px; box-shadow: 0 2px 8px #0001; margin: 2em 0; padding: 2em; max-width: 600px; }
+    h1, h2 { color: #3366cc; }
+    input[type="text"] { width: 80%; padding: 0.5em; font-size: 1em; border-radius: 4px; border: 1px solid #bbb; }
+    button { padding: 0.5em 1em; font-size: 1em; background: #3366cc; color: #fff; border: none; border-radius: 4px; cursor: pointer; margin-left: 0.5em; }
+    button:hover { background: #2352a2; }
+    .result { margin-top: 1em; font-size: 1.1em; }
+    @media (max-width: 600px) {
+      .section { padding: 1em; }
+      input[type="text"] { width: 100%; }
+    }
+  </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Content Moderator (Free, Multi-Platform)</h1>
-    <p>Paste your post text/caption or a post URL (Reddit, Twitter, Facebook, Instagram, OnlyFans):</p>
-    <textarea id="inputText" placeholder="Paste text or post URL here..."></textarea>
-    <button id="checkTextBtn">Check Text</button>
-    <div id="textResult"></div>
-    <hr>
-    <h2>Check an Image</h2>
-    <p>Paste a **public** Google Drive image link (see instructions below):</p>
-    <input id="imageUrlInput" placeholder="Paste Google Drive image link" style="width:100%"/>
-    <button id="checkImageBtn">Check Image</button>
-    <div id="imageResult"></div>
-    <hr>
-    <h3>Instructions</h3>
-    <ul>
-      <li>1. For text/caption, just paste and click "Check Text".</li>
-      <li>2. For an image: In Google Drive, right-click your image → Get link → Set access to "Anyone with the link" → Copy link → Paste above → Click "Check Image".</li>
-      <li>3. Wait for the result—green means safe, red means risky for posting.</li>
-    </ul>
-    <small>
-      Powered by free <a href="https://huggingface.co/facebook/roberta-base-toxic-comments">text</a> and <a href="https://huggingface.co/SmilingWolf/wd-v1-4-vit-tagger">image</a> moderation models.<br>
-      No login or signup needed.
-    </small>
+  <div class="section">
+    <h1>Content Moderation Demo</h1>
+    <p>This tool checks for toxic language in text and NSFW content in images, right in your browser.<br>
+      <b>No API key required!</b>
+    </p>
   </div>
+
+  <div class="section">
+    <h2>Text Moderation</h2>
+    <input type="text" id="inputText" placeholder="Paste text or Reddit post URL" />
+    <button id="checkTextBtn">Check Text</button>
+    <div id="textResult" class="result"></div>
+  </div>
+
+  <div class="section">
+    <h2>Image Moderation</h2>
+    <input type="text" id="imageUrlInput" placeholder="Paste a direct image URL" />
+    <button id="checkImageBtn">Check Image</button>
+    <div id="imageResult" class="result"></div>
+  </div>
+
+  <div style="text-align:center;color:#888;font-size:0.9em;margin-top:3em;">
+    &copy; 2025 Content Moderation Demo. Powered by TensorFlow.js & NSFWJS.<br>
+    All moderation runs locally in your browser.
+  </div>
+
   <script src="main.js"></script>
 </body>
 </html>
