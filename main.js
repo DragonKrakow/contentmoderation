@@ -29,9 +29,9 @@ document.getElementById("checkTextBtn").onclick = async function() {
     }
   }
 
-  // Hugging Face Moderation API (facebook/roberta-base-toxic-comments)
+  // Hugging Face Moderation API (unitary/toxic-bert)
   try {
-    const apiUrl = "https://api-inference.huggingface.co/models/facebook/roberta-base-toxic-comments";
+    const apiUrl = "https://api-inference.huggingface.co/models/unitary/toxic-bert";
     const response = await fetch(apiUrl, {
       method: "POST",
       headers: {
