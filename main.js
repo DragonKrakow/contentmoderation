@@ -1,3 +1,5 @@
+// -------- TEXT MODERATION --------
+let toxicityModel = null;
 document.getElementById("checkTextBtn").onclick = async function() {
   const input = document.getElementById("inputText").value.trim();
   const resultDiv = document.getElementById("textResult");
@@ -6,110 +8,81 @@ document.getElementById("checkTextBtn").onclick = async function() {
     return;
   }
   resultDiv.innerHTML = "Checking...";
+
+  // If it's a Reddit post URL, try to fetch post text (other platforms not supported client-side)
   let textToCheck = input;
-
-  // If it's a Reddit/Twitter/Facebook/Instagram/OnlyFans URL, try to fetch post text
-  if (input.match(/^https?:\/\/(www\.)?(reddit\.com|x\.com|twitter\.com|facebook\.com|instagram\.com|onlyfans\.com)\//)) {
+  if (input.match(/^https?:\/\/(www\.)?reddit\.com\//)) {
     try {
-      if (input.includes("reddit.com")) {
-        let url = input;
-        if (!url.endsWith(".json")) url += ".json";
-        const resp = await fetch(url, {headers: {"User-Agent": "Mozilla/5.0"}});
-        const data = await resp.json();
-        const post = data[0]?.data?.children[0]?.data;
-        textToCheck = post?.selftext || post?.title || input;
-      } else {
-        // For Twitter/X, Facebook, Instagram, OnlyFans: cannot fetch text due to CORS & login
-        resultDiv.innerHTML = "Cannot auto-fetch text from this platform. Please copy/paste the post text.";
-        return;
-      }
+      let url = input;
+      if (!url.endsWith(".json")) url += ".json";
+      const resp = await fetch(url, {headers: {"User-Agent": "Mozilla/5.0"}});
+      const data = await resp.json();
+      const post = data[0]?.data?.children[0]?.data;
+      textToCheck = post?.selftext || post?.title || input;
     } catch(e) {
-      resultDiv.innerHTML = "Could not fetch post content. Please paste the text manually.";
+      resultDiv.innerHTML = "Could not fetch Reddit post content. Please paste the text manually.";
       return;
     }
+  } else if (input.match(/^https?:\/\/(www\.)?(x\.com|twitter\.com|facebook\.com|instagram\.com|onlyfans\.com)\//)) {
+    resultDiv.innerHTML = "Cannot auto-fetch text from this platform. Please copy/paste the post text.";
+    return;
   }
 
-  // Hugging Face Moderation API (unitary/toxic-bert)
-  try {
-    const apiUrl = "https://api-inference.huggingface.co/models/unitary/toxic-bert";
-    const response = await fetch(apiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer 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"
-      },
-      body: JSON.stringify({"inputs": textToCheck})
-    });
-    const result = await response.json();
-    if (result.error) {
-      resultDiv.innerHTML = "<span style='color:red'>API error: "+result.error+"</span>";
-      return;
-    }
-    const arr = result[0];
-    const sorted = arr.sort((a, b) => b.score - a.score);
-    const top = sorted[0];
-    const color = top.label === "toxic" ? "red" : "green";
-    resultDiv.innerHTML = `<span style='color:${color}'>Prediction: ${top.label} (${(top.score*100).toFixed(1)}%)</span>`;
-  } catch(e) {
-    resultDiv.innerHTML = "<span style='color:red'>Request failed.</span>";
+  // Load the TensorFlow.js toxicity model if not loaded
+  if (!toxicityModel) {
+    toxicityModel = await toxicity.load(0.7); // 0.7 is the threshold
   }
+  toxicityModel.classify([textToCheck]).then(predictions => {
+    let toxicLabels = predictions.filter(p => p.results[0].match).map(p => p.label);
+    if (toxicLabels.length > 0) {
+      resultDiv.innerHTML = `<span style='color:red'>Toxic labels detected: ${toxicLabels.join(", ")}</span>`;
+    } else {
+      resultDiv.innerHTML = `<span style='color:green'>No toxicity detected.</span>`;
+    }
+  }).catch(e => {
+    resultDiv.innerHTML = `<span style='color:red'>Error running toxicity model.</span>`;
+  });
 };
 
+
+// -------- IMAGE MODERATION --------
+let nsfwModel = null;
 document.getElementById("checkImageBtn").onclick = async function() {
   const url = document.getElementById("imageUrlInput").value.trim();
   const resultDiv = document.getElementById("imageResult");
   if (!url) {
-    resultDiv.innerHTML = "Paste a public Google Drive image URL.";
+    resultDiv.innerHTML = "Paste a public image URL.";
     return;
   }
   resultDiv.innerHTML = "Checking image...";
 
-  // Convert Google Drive share link to direct download link
-  let match = url.match(/\/d\/(.*?)\//);
-  let fileId = match ? match[1] : null;
-  if (!fileId) {
-    // Try alternate link format
-    match = url.match(/id=([^&]+)/);
-    fileId = match ? match[1] : null;
+  // Load NSFWJS model if not loaded
+  if (!nsfwModel) {
+    nsfwModel = await nsfwjs.load();
   }
-  if (!fileId) {
-    resultDiv.innerHTML = "Invalid Google Drive link.";
-    return;
-  }
-  const directUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
 
-  // Fetch image as blob, convert to base64
-  try {
-    const imgResp = await fetch(directUrl);
-    const imgBlob = await imgResp.blob();
-    const reader = new FileReader();
-    reader.onloadend = async function() {
-      const base64 = reader.result.split(',')[1];
-      // Send to Hugging Face image moderation API
-      const apiUrl = "https://api-inference.huggingface.co/models/SmilingWolf/wd-v1-4-vit-tagger";
-      const hfResp = await fetch(apiUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer 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"
-        },
-        body: JSON.stringify({inputs: base64})
-      });
-      const res = await hfResp.json();
-      if (res.error) {
-        resultDiv.innerHTML = "<span style='color:red'>API error: "+res.error+"</span>";
-        return;
-      }
-      // Check for nsfw-related tags
-      const nsfwTags = Object.entries(res).filter(([k,v]) => k.includes("nsfw") && v > 0.3);
-      if (nsfwTags.length > 0) {
-        resultDiv.innerHTML = `<span style='color:red'>Likely NSFW: ${nsfwTags.map(([k])=>k).join(", ")}</span>`;
-      } else {
-        resultDiv.innerHTML = `<span style='color:green'>No strong NSFW signals detected. Likely safe.</span>`;
-      }
-    };
-    reader.readAsDataURL(imgBlob);
-  } catch(e) {
-    resultDiv.innerHTML = "<span style='color:red'>Could not check image.</span>";
-  }
+  // Create an image element
+  let img = new window.Image();
+  img.crossOrigin = "anonymous";
+  img.onload = async function() {
+    // Create a canvas to draw the image
+    let canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    let ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    // Classify the image
+    const predictions = await nsfwModel.classify(canvas);
+    // Find the category with the highest probability
+    const top = predictions.sort((a, b) => b.probability - a.probability)[0];
+    if (top.className === "Hentai" || top.className === "Porn" || top.className === "Sexy") {
+      resultDiv.innerHTML = `<span style='color:red'>NSFW detected: ${top.className} (${(top.probability*100).toFixed(1)}%)</span>`;
+    } else {
+      resultDiv.innerHTML = `<span style='color:green'>Safe: ${top.className} (${(top.probability*100).toFixed(1)}%)</span>`;
+    }
+  };
+  img.onerror = function() {
+    resultDiv.innerHTML = "<span style='color:red'>Could not load image. Try a direct image URL.</span>";
+  };
+  img.src = url;
 };
