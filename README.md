@@ -1,42 +1,48 @@
-# Multi-Platform Content Moderator (Free)
+# Content Moderation Demo (No API Key Required)
 
-A static site for checking text or images for safe posting on Reddit, Twitter/X, Facebook, Instagram, and OnlyFans.
+This project is a simple web-based content moderation tool for both **text** and **images** that runs entirely in your browser.  
+It uses open-source machine learning models with no API key or backend required.
+
+---
 
 ## Features
 
-- **Text/Captions**: Paste text or a post URL (Reddit auto-fetches post, others require manual paste).
-- **Images**: Paste a public Google Drive image link. The tool checks for NSFW or risky content.
-- **No signup or API key required.**
+- **Text Moderation**: Checks for toxic language using TensorFlow.js Toxicity Model.
+- **Image Moderation**: Detects NSFW (Not Safe For Work) content in images using NSFWJS.
+- **No API key required**: Everything runs locally in your browser.
+- **Supports Reddit post URLs** for auto-fetching text. For other platforms, paste the text manually.
 
-## How to Use
+---
 
-1. **Deploy to GitHub Pages**:
-   - Upload all files to a new GitHub repo (e.g., `content-moderator-site`).
-   - Go to repo Settings → Pages.
-   - Set source to `/ (root)` or `/docs` if you put your files there.
-   - Share the GitHub Pages link (e.g., `https://yourusername.github.io/content-moderator-site/`).
+## Usage
 
-2. **Check Text**:
-   - Paste your post's text or caption, or paste a Reddit post URL.
-   - Click "Check Text".
-   - See if the content is flagged as "toxic" (risky for posting).
+1. Clone or download this repository.
+2. Open `index.html` in your browser.
+3. Paste text (or a Reddit post URL) and click **Check Text**.
+4. Paste a public image URL and click **Check Image**.
 
-3. **Check Image**:
-   - Upload your image to Google Drive.
-   - Right-click → "Get link" → Set access: "Anyone with the link".
-   - Copy the link. Paste it in the site.
-   - Click "Check Image".
-   - See if the image is likely NSFW or safe.
+**Note:**  
+- For images, use a direct image URL (must allow cross-origin access).
+- For Twitter, Facebook, Instagram, etc., copy and paste the post text manually (auto-fetch is not supported client-side).
 
-## Supported Platforms
+---
 
-- **Reddit**: Paste text or post URL (auto-fetches text for posts).
-- **Twitter/X, Facebook, Instagram, OnlyFans**: Paste text/caption manually.
+## Technology
 
-## Notes
+- [TensorFlow.js Toxicity Model](https://github.com/tensorflow/tfjs-models/tree/master/toxicity)
+- [NSFWJS](https://github.com/infinitered/nsfwjs)
 
-- All moderation is done client-side, using free Hugging Face APIs.
-- No login, no fees, no programming needed.
-- For more advanced features, edit `main.js`.
+---
+
+## Security & Privacy
+
+- All processing happens in your browser.  
+- No data is sent to any backend or third-party server.
+
+---
+
+## Credits
+
+- Inspired by open-source moderation tools and the TensorFlow.js/NSFWJS demos.
 
 ---
