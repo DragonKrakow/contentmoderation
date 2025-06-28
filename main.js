@@ -68,6 +68,8 @@ function checkNSFWDeps() {
 }
 
 let nsfwModel = null;
+const NSFW_MODEL_URL = "https://d1zv2aa70wpiur.cloudfront.net/tfjs_quant_nsfw_mobilenet/";
+
 document.getElementById("checkImageBtn").onclick = async function() {
   const url = document.getElementById("imageUrlInput").value.trim();
   const resultDiv = document.getElementById("imageResult");
@@ -88,9 +90,9 @@ document.getElementById("checkImageBtn").onclick = async function() {
   // Load NSFWJS model if not loaded
   try {
     if (!nsfwModel) {
-      // Optional: specify model URL if you want to self-host, otherwise loads from CDN
-      nsfwModel = await nsfwjs.load();
-      console.log("NSFWJS model loaded");
+      // Use custom model CDN path
+      nsfwModel = await nsfwjs.load(NSFW_MODEL_URL);
+      console.log("NSFWJS model loaded from custom CDN");
     }
   } catch (e) {
     resultDiv.innerHTML = "<span style='color:red'>Failed to load NSFWJS model. Check your network connection and that CDN/model files are reachable.</span>";
