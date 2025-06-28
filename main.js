@@ -34,10 +34,16 @@ document.getElementById("checkTextBtn").onclick = async function() {
   }
   toxicityModel.classify([textToCheck]).then(predictions => {
     let toxicLabels = predictions.filter(p => p.results[0].match).map(p => p.label);
+    let resultHtml = "<b>Model predictions:</b><ul>";
+    predictions.forEach(p => {
+      resultHtml += `<li>${p.label}: ${(p.results[0].probabilities[1] * 100).toFixed(2)}% (${p.results[0].match ? "match" : "no match"})</li>`;
+    });
+    resultHtml += "</ul>";
+
     if (toxicLabels.length > 0) {
-      resultDiv.innerHTML = `<span style='color:red'>Toxic labels detected: ${toxicLabels.join(", ")}</span>`;
+      resultDiv.innerHTML = `<span style='color:red'>Toxic labels detected: ${toxicLabels.join(", ")}</span><br>${resultHtml}`;
     } else {
-      resultDiv.innerHTML = `<span style='color:green'>No toxicity detected.</span>`;
+      resultDiv.innerHTML = `<span style='color:green'>No toxicity detected.</span><br>${resultHtml}`;
     }
   }).catch(e => {
     resultDiv.innerHTML = `<span style='color:red'>Error running toxicity model.</span>`;
@@ -65,21 +71,31 @@ document.getElementById("checkImageBtn").onclick = async function() {
   let img = new window.Image();
   img.crossOrigin = "anonymous";
   img.onload = async function() {
-    // Create a canvas to draw the image
     let canvas = document.createElement('canvas');
     canvas.width = img.naturalWidth;
     canvas.height = img.naturalHeight;
     let ctx = canvas.getContext('2d');
     ctx.drawImage(img, 0, 0);
-    // Classify the image
+
     const predictions = await nsfwModel.classify(canvas);
-    // Find the category with the highest probability
-    const top = predictions.sort((a, b) => b.probability - a.probability)[0];
-    if (top.className === "Hentai" || top.className === "Porn" || top.className === "Sexy") {
-      resultDiv.innerHTML = `<span style='color:red'>NSFW detected: ${top.className} (${(top.probability*100).toFixed(1)}%)</span>`;
+
+    // Show all categories and their probabilities
+    let resultHtml = "<b>Model predictions:</b><ul>";
+    predictions.forEach(p => {
+      resultHtml += `<li>${p.className}: ${(p.probability * 100).toFixed(2)}%</li>`;
+    });
+    resultHtml += "</ul>";
+
+    // Highlight if any category is likely NSFW
+    const nsfwTypes = ["Hentai", "Porn", "Sexy"];
+    const likelyNSFW = predictions.filter(p => nsfwTypes.includes(p.className) && p.probability > 0.4);
+    if (likelyNSFW.length > 0) {
+      resultHtml = `<span style='color:red'>NSFW detected: ${likelyNSFW.map(p => `${p.className} (${(p.probability*100).toFixed(1)}%)`).join(", ")}</span><br>` + resultHtml;
     } else {
-      resultDiv.innerHTML = `<span style='color:green'>Safe: ${top.className} (${(top.probability*100).toFixed(1)}%)</span>`;
+      resultHtml = `<span style='color:green'>No strong NSFW signals detected. Likely safe.</span><br>` + resultHtml;
     }
+
+    resultDiv.innerHTML = resultHtml;
   };
   img.onerror = function() {
     resultDiv.innerHTML = "<span style='color:red'>Could not load image. Try a direct image URL.</span>";
