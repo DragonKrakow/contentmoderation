@@ -67,38 +67,48 @@ document.getElementById("checkImageBtn").onclick = async function() {
     nsfwModel = await nsfwjs.load();
   }
 
-  // Create an image element
   let img = new window.Image();
   img.crossOrigin = "anonymous";
+  let timedOut = false;
+  let timeout = setTimeout(() => {
+    timedOut = true;
+    resultDiv.innerHTML = "<span style='color:red'>Image took too long to load. Possible CORS issue or invalid image.</span>";
+  }, 7000); // 7 seconds timeout
+
   img.onload = async function() {
-    let canvas = document.createElement('canvas');
-    canvas.width = img.naturalWidth;
-    canvas.height = img.naturalHeight;
-    let ctx = canvas.getContext('2d');
-    ctx.drawImage(img, 0, 0);
+    if (timedOut) return;
+    clearTimeout(timeout);
+    try {
+      let canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      let ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
 
-    const predictions = await nsfwModel.classify(canvas);
+      const predictions = await nsfwModel.classify(canvas);
 
-    // Show all categories and their probabilities
-    let resultHtml = "<b>Model predictions:</b><ul>";
-    predictions.forEach(p => {
-      resultHtml += `<li>${p.className}: ${(p.probability * 100).toFixed(2)}%</li>`;
-    });
-    resultHtml += "</ul>";
+      let resultHtml = "<b>Model predictions:</b><ul>";
+      predictions.forEach(p => {
+        resultHtml += `<li>${p.className}: ${(p.probability * 100).toFixed(2)}%</li>`;
+      });
+      resultHtml += "</ul>";
 
-    // Highlight if any category is likely NSFW
-    const nsfwTypes = ["Hentai", "Porn", "Sexy"];
-    const likelyNSFW = predictions.filter(p => nsfwTypes.includes(p.className) && p.probability > 0.4);
-    if (likelyNSFW.length > 0) {
-      resultHtml = `<span style='color:red'>NSFW detected: ${likelyNSFW.map(p => `${p.className} (${(p.probability*100).toFixed(1)}%)`).join(", ")}</span><br>` + resultHtml;
-    } else {
-      resultHtml = `<span style='color:green'>No strong NSFW signals detected. Likely safe.</span><br>` + resultHtml;
+      const nsfwTypes = ["Hentai", "Porn", "Sexy"];
+      const likelyNSFW = predictions.filter(p => nsfwTypes.includes(p.className) && p.probability > 0.4);
+      if (likelyNSFW.length > 0) {
+        resultHtml = `<span style='color:red'>NSFW detected: ${likelyNSFW.map(p => `${p.className} (${(p.probability*100).toFixed(1)}%)`).join(", ")}</span><br>` + resultHtml;
+      } else {
+        resultHtml = `<span style='color:green'>No strong NSFW signals detected. Likely safe.</span><br>` + resultHtml;
+      }
+      resultDiv.innerHTML = resultHtml;
+    } catch (e) {
+      resultDiv.innerHTML = "<span style='color:red'>Could not analyze image. Possible CORS issue or invalid image.</span>";
     }
-
-    resultDiv.innerHTML = resultHtml;
   };
   img.onerror = function() {
-    resultDiv.innerHTML = "<span style='color:red'>Could not load image. Try a direct image URL.</span>";
+    if (timedOut) return;
+    clearTimeout(timeout);
+    resultDiv.innerHTML = "<span style='color:red'>Could not load image. Try a direct image URL that allows cross-origin access.</span>";
   };
   img.src = url;
 };
