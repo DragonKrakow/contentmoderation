@@ -36,7 +36,7 @@ document.getElementById("checkTextBtn").onclick = async function() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Bearer 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"
+        "Authorization": "Bearer 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"
       },
       body: JSON.stringify({"inputs": textToCheck})
     });
@@ -91,7 +91,7 @@ document.getElementById("checkImageBtn").onclick = async function() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": "Bearer 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"
+          "Authorization": "Bearer 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"
         },
         body: JSON.stringify({inputs: base64})
       });
